@@ -1,0 +1,39 @@
+.header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: #1c202c;
+    color: #fff;
+    padding: 1rem 0;
+    text-align: center;
+    z-index: 1000;
+}
+
+.header .container {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.content {
+    max-width: 1400px;
+    padding: 20px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.temperature {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.other {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}

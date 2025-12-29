@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel danych czujników</title>
+    <link rel="stylesheet" href="{{ url_for('dashboard.static', filename='dashboard/css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('dashboard.static', filename='dashboard/css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('dashboard.static', filename='dashboard/css/components.css') }}">
+</head>
+<body>
+    {% include "dashboard/partials/header.html" %}
+    <main class="content">
+        <section class="temperature">
+            {% include "dashboard/partials/card_temp_current.html" %}
+            {% include "dashboard/partials/card_temp_history.html" %}
+        </section>
+        <section class="other">
+            {% include "dashboard/partials/card_gas.html" %}
+            {% include "dashboard/partials/card_humidity.html" %}
+        </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script type="module"
+            src="{{ url_for('dashboard.static', filename='dashboard/js/main.js') }}">
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<div class="card">
+    <div class="info" >
+        <h2>HUMIDITY</h2>
+    </div>
+    <div class="card-content">
+        <div class="chart-content" style="position: relative;">
+            <canvas id="humidityChart" width="200" height="200" style="position: relative; z-index: 1;"></canvas>
+            <svg class="chart-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+              <g fill="none" fill-rule="evenodd">
+                <path fill="#B4DFFB" d="M26.6995662,63 C36.4747667,63 44.3991324,55.0756343 44.3991324,45.3004338 C44.3991324,35.5252333 26.6995662,9 26.6995662,9 C26.6995662,9 9,35.5252333 9,45.3004338 C9,55.0756343 16.9243657,63 26.6995662,63 Z"/>
+                <path fill="#4796E7" d="M41.1107898,41 C48.351679,41 54.2215796,35.1300995 54.2215796,27.8892102 C54.2215796,20.648321 41.1107898,1 41.1107898,1 C41.1107898,1 28,20.648321 28,27.8892102 C28,35.1300995 33.8699005,41 41.1107898,41 Z"/>
+                <path stroke="#B4DFFB" stroke-linecap="round" stroke-width="2" d="M32,28 C32,32.9705627 36.0294373,37 41,37 L41,37"/>
+                <path stroke="#FFF" stroke-linecap="round" stroke-width="2" d="M13,46 C13,52.627417 18.372583,58 25,58 L25,58"/>
+              </g>
+            </svg>
+        </div>
+        <div id="hum" class="value">-- %</div>
+        <div class="max-min-h">
+            <div class="max">
+                <svg width="35px" height="35px" viewBox="-0.5 0 25 25" fill="#ff6384" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22.4199C17.5228 22.4199 22 17.9428 22 12.4199C22 6.89707 17.5228 2.41992 12 2.41992C6.47715 2.41992 2 6.89707 2 12.4199C2 17.9428 6.47715 22.4199 12 22.4199Z" stroke="#f74a6f" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 13.8599L10.87 10.8C11.0125 10.6416 11.1868 10.5149 11.3815 10.4282C11.5761 10.3415 11.7869 10.2966 12 10.2966C12.2131 10.2966 12.4239 10.3415 12.6185 10.4282C12.8132 10.5149 12.9875 10.6416 13.13 10.8L16 13.8599" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div class="temp-info">
+                    <span id="hum-max" class="small-value">
+                        -- %
+                    </span>
+                    Highest
+                </div>
+            </div>
+            <div class="min">
+                <svg width="35px" height="35px" viewBox="-0.5 0 25 25" fill="#17d9b5" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22.4199C17.5228 22.4199 22 17.9428 22 12.4199C22 6.89707 17.5228 2.41992 12 2.41992C6.47715 2.41992 2 6.89707 2 12.4199C2 17.9428 6.47715 22.4199 12 22.4199Z" stroke="#13ab8f" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 10.99L13.13 14.05C12.9858 14.2058 12.811 14.3298 12.6166 14.4148C12.4221 14.4998 12.2122 14.5437 12 14.5437C11.7878 14.5437 11.5779 14.4998 11.3834 14.4148C11.189 14.3298 11.0142 14.2058 10.87 14.05L8 10.99" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div class="temp-info">
+                    <span id="hum-min" class="small-value">
+                        -- %
+                    </span>
+                    Lowest
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

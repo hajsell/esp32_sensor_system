@@ -1,0 +1,18 @@
+# --- Web / API ---
+Flask>=3.0
+Flask-SocketIO>=5.3
+
+# --- Async / WebSocket transport ---
+eventlet>=0.36
+
+# --- MQTT ---
+paho-mqtt>=2.1
+
+# --- ENV (.env) ---
+python-dotenv>=1.0
+
+# --- OpenAI agent ---
+openai>=1.0
+
+# --- (Opcjonalnie) produkcyjne uruchamianie ---
+gunicorn>=22.0
