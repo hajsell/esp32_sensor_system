@@ -1,23 +1,39 @@
+import os
+import json
 from flask import Blueprint, render_template, jsonify, current_app, request
-from app.services.storage import read_all
+from dotenv import load_dotenv
+
 from app.services.openai_agent import OpenAIAgent
 
-agent = OpenAIAgent(
-    model="gpt-4o-mini",
-    context_file="../../data/cyfryzacja reguły.docx"
-)
+
+# Wczytaj .env (raz przy imporcie modułu)
+load_dotenv()
 
 bp = Blueprint(
     "dashboard",
     __name__,
     template_folder="../../frontend/templates",
     static_folder="../../frontend/static",
-    static_url_path="/frontend-static"
+    static_url_path="/frontend-static",
 )
+
+agent = OpenAIAgent()
+
+
+def _read_json_file(path: str):
+    # DATA_FILE/THRESHOLDS_FILE w .env mogą mieć cudzysłowy; os.getenv już je zwróci bez problemu,
+    # ale na wszelki wypadek strip.
+    path = (path or "").strip().strip('"').strip("'")
+    if not path:
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
 
 @bp.route("/")
 def index():
     return render_template("dashboard/index.html")
+
 
 @bp.route("/api/chat", methods=["POST"])
 def chat():
@@ -28,16 +44,37 @@ def chat():
     if not message:
         return jsonify({"reply": "Podaj wiadomość :)"}), 400
 
-    data_file = current_app.config["DATA_FILE"]
-    data = read_all(data_file)
-    last = data[-1] if data else None
+    data_path = os.getenv("DATA_FILE") or current_app.config.get("DATA_FILE")
+    thr_path = os.getenv("THRESHOLDS_FILE") or current_app.config.get("THRESHOLDS_FILE")
 
-    db_snapshot = {"last": last}
+    if not data_path:
+        return jsonify({"reply": "Brak DATA_FILE w .env / config."}), 500
+    if not thr_path:
+        return jsonify({"reply": "Brak THRESHOLDS_FILE w .env / config."}), 500
 
-    reply = agent.ask(message, history=history, db_snapshot=db_snapshot)
+    # 24h baza + progi
+    data_24h = _read_json_file(data_path)
+    thresholds = _read_json_file(thr_path)
+
+    # Jeżeli data_24h to lista rekordów, zostawiamy jak jest.
+    # Jeżeli to dict, też OK — model dostanie to jako JSON.
+    current_db = {
+        "window": "24h",
+        "data": data_24h,
+    }
+
+    reply = agent.ask(
+        message=message,
+        history=history,
+        current_db=current_db,
+        thresholds=thresholds,
+    )
     return jsonify({"reply": reply})
+
 
 @bp.route("/api/data")
 def get_data():
-    data_file = current_app.config["DATA_FILE"]
-    return jsonify(read_all(data_file))
+    data_path = os.getenv("DATA_FILE") or current_app.config.get("DATA_FILE")
+    if not data_path:
+        return jsonify({"error": "Brak DATA_FILE w .env / config."}), 500
+    return jsonify(_read_json_file(data_path))

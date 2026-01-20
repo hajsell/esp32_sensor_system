@@ -1,89 +1,86 @@
 import os
+import json
+from typing import Any
 from openai import OpenAI
+
 
 class OpenAIAgent:
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = "gpt-4o-mini",
-        context_file: str | None = None,
+        model: str | None = None,
+        vector_store_id: str | None = None,
     ):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            raise RuntimeError("Brak OPENAI_API_KEY w środowisku.")
+            raise RuntimeError("Brak OPENAI_API_KEY w środowisku (.env).")
 
-        self.model = model
+        self.model = model or os.getenv("OPENAI_MODEL") or "gpt-4.1"
         self.client = OpenAI(api_key=self.api_key)
 
-        self.context_text = ""
-        if context_file:
-            self.context_text = self._load_context_file(context_file)
+        # Opcjonalne: jeśli kiedyś podepniesz PDF do file_search, tu wstawisz vs_...
+        self.vector_store_id = vector_store_id or os.getenv("OPENAI_VECTOR_STORE_ID")
 
-    def _load_context_file(self, path: str) -> str:
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return f.read().strip()
-        except FileNotFoundError:
-            return ""
+    def _runtime_block(self, current_db: Any, thresholds: Any) -> str:
+        parts: list[str] = []
 
-    def _build_db_context(self, db_snapshot: dict | None) -> str:
-        """
-        db_snapshot: mały wycinek danych, NIE cała baza.
-        Np. ostatni pomiar + min/max + progi, itp.
-        """
-        if not db_snapshot:
-            return ""
+        if current_db is not None:
+            parts.append(
+                "CURRENT_DB_JSON (źródło prawdy o danych; nie zgaduj):\n"
+                + json.dumps(current_db, ensure_ascii=False)
+            )
 
-        # Formatuj kontekst tak, żeby model nie zgadywał
-        return (
-            "DANE Z SYSTEMU (traktuj jako prawdę, nie zgaduj):\n"
-            f"{db_snapshot}\n"
-        ).strip()
+        if thresholds is not None:
+            parts.append(
+                "THRESHOLDS_JSON (źródło prawdy o progach/alertach; nie zgaduj):\n"
+                + json.dumps(thresholds, ensure_ascii=False)
+            )
+
+        return "\n\n".join(parts).strip()
 
     def ask(
         self,
         message: str,
         history: list[dict] | None = None,
-        db_snapshot: dict | None = None,
+        current_db: Any | None = None,
+        thresholds: Any | None = None,
     ) -> str:
         history = history or []
 
         system = (
             "Jesteś pomocnym asystentem w dashboardzie IoT. "
             "Odpowiadaj krótko po polsku. "
-            "Jeśli brakuje danych, powiedz czego brakuje. "
+            "BIEŻĄCE liczby i stan systemu bierz wyłącznie z CURRENT_DB_JSON i THRESHOLDS_JSON. "
+            "Jeśli brakuje danych, powiedz dokładnie czego brakuje. "
             "Nie zmyślaj wartości sensorów."
         )
 
-        messages = [{"role": "system", "content": system}]
+        messages: list[dict] = [{"role": "system", "content": system}]
 
-        # 1) Stały kontekst z pliku (opcjonalnie)
-        if self.context_text:
-            messages.append({
-                "role": "system",
-                "content": "KONTEKST PROJEKTU (dokumentacja):\n" + self.context_text
-            })
+        runtime = self._runtime_block(current_db, thresholds)
+        if runtime:
+            messages.append({"role": "system", "content": runtime})
 
-        # 2) Kontekst z bazy (mały snapshot)
-        db_ctx = self._build_db_context(db_snapshot)
-        if db_ctx:
-            messages.append({
-                "role": "system",
-                "content": db_ctx
-            })
-
-        # 3) Historia rozmowy
         for m in history:
             role = m.get("role")
             content = m.get("content")
             if role in ("user", "assistant") and isinstance(content, str):
                 messages.append({"role": role, "content": content})
 
-        # 4) Aktualne pytanie
         messages.append({"role": "user", "content": message})
+
+        tools = None
+        include = None
+
+        # Jeśli kiedyś dodasz PDF do vector store, to to zadziała automatycznie:
+        if self.vector_store_id:
+            tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
+            include = ["file_search_call.results"]
 
         resp = self.client.responses.create(
             model=self.model,
-            input=messages
+            input=messages,
+            tools=tools,
+            include=include,
         )
         return resp.output_text
