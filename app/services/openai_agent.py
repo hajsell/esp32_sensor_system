@@ -18,7 +18,6 @@ class OpenAIAgent:
         self.model = model or os.getenv("OPENAI_MODEL") or "gpt-4.1"
         self.client = OpenAI(api_key=self.api_key)
 
-        # Opcjonalne: jeśli kiedyś podepniesz PDF do file_search, tu wstawisz vs_...
         self.vector_store_id = vector_store_id or os.getenv("OPENAI_VECTOR_STORE_ID")
 
     def _runtime_block(self, current_db: Any, thresholds: Any) -> str:
