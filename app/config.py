@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
@@ -11,6 +13,7 @@ class Config:
     MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
 
     DATA_FILE = os.getenv("DATA_FILE", "data.json")
+    THRESHOLDS_FILE = os.getenv("THRESHOLDS_FILE", "data/thresholds.json")
 
     EMAIL_SENDER = os.getenv("EMAIL_SENDER")
     EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")

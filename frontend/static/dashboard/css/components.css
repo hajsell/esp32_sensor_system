@@ -7,6 +7,9 @@
     box-sizing: border-box;
 }
 
+.card--hist {
+    width: 100%;
+}
 .card .info {
     padding: 8px 12px;
 }
@@ -88,7 +91,91 @@
     font-size: 0.75rem;
     color: #676a73;
 }
+
 .small-value {
     font-size: 1.25rem;
     color: #989dab;
+}
+
+.thresholds-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.thresholds-card .card__title {
+  opacity: 0.75;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #898d99;
+  text-align: justify;
+}
+
+.thresholds-form {
+  display: grid;
+  gap: 12px;
+}
+
+.thresholds-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .thresholds-grid { grid-template-columns: 1fr; }
+}
+
+.threshold-field {
+  display: grid;
+  gap: 6px;
+}
+
+.threshold-label {
+  font-size: 15px;
+  opacity: 0.8;
+  text-align: left;
+}
+
+.threshold-input {
+  width: calc(100% - 20px);
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: #e8eefc;
+  outline: none;
+}
+
+.threshold-input:focus {
+  border-color: rgba(255,255,255,0.22);
+}
+
+.thresholds-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.thresholds-btn {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: #e8eefc;
+  cursor: pointer;
+}
+
+.thresholds-btn.primary {
+  background: rgba(43,108,255,0.75);
+  border-color: rgba(43,108,255,0.35);
+}
+
+.thresholds-status {
+  font-size: 12px;
+  opacity: 0.8;
 }

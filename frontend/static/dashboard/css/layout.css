@@ -28,12 +28,18 @@
 
 .temperature {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     gap: 20px;
 }
 
 .other {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.chat {
+    display: flex;
+    justify-content: space_between;
     gap: 20px;
 }

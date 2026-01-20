@@ -6,10 +6,15 @@
     <link rel="stylesheet" href="{{ url_for('dashboard.static', filename='dashboard/css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('dashboard.static', filename='dashboard/css/layout.css') }}">
     <link rel="stylesheet" href="{{ url_for('dashboard.static', filename='dashboard/css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('dashboard.static', filename='dashboard/css/ai_chat.css') }}">
 </head>
 <body>
     {% include "dashboard/partials/header.html" %}
     <main class="content">
+        <section class="chat">
+            {% include "dashboard/partials/ai_chat.html" %}
+            {% include "dashboard/partials/card_thresholds.html" %}
+        </section>
         <section class="temperature">
             {% include "dashboard/partials/card_temp_current.html" %}
             {% include "dashboard/partials/card_temp_history.html" %}
