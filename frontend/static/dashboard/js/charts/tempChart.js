@@ -1,8 +1,14 @@
 let tempChart = null;
+let minTemp = Infinity;
+let maxTemp = -Infinity;
 
 export function createTempChart(canvasEl, history) {
   const ctx = canvasEl.getContext("2d");
   if (tempChart) tempChart.destroy();
+
+  if (history && history.length > 0) {
+    updateMinMax(history);
+  }
 
   tempChart = new Chart(ctx, {
     type: "line",
@@ -48,8 +54,37 @@ export function createTempChart(canvasEl, history) {
   return tempChart;
 }
 
+function updateMinMax(history) {
+  if (!history || history.length === 0) return;
+
+  const temperatures = history.map(e => parseFloat(e.temperature)).filter(val => !isNaN(val));
+  if (temperatures.length === 0) return;
+
+  const currentMin = Math.min(...temperatures);
+  const currentMax = Math.max(...temperatures);
+
+  if (currentMin < minTemp) {
+    minTemp = currentMin;
+    const minEl = document.getElementById("temp-min");
+    if (minEl) minEl.innerText = `${minTemp.toFixed(1)}°C`;
+  }
+
+  if (currentMax > maxTemp) {
+    maxTemp = currentMax;
+    const maxEl = document.getElementById("temp-max");
+    if (maxEl) maxEl.innerText = `${maxTemp.toFixed(1)}°C`;
+  }
+
+  const latestTemp = temperatures[temperatures.length - 1];
+  const tempDisplay = document.getElementById("temp");
+  if (tempDisplay) tempDisplay.innerText = `${latestTemp.toFixed(1)}°C`;
+}
+
 export function updateTempChart(history) {
   if (!tempChart) return;
+
+  updateMinMax(history);
+
   tempChart.data.datasets[0].data = history.map(e => ({ x: e.timestamp, y: e.temperature }));
   tempChart.update();
 }

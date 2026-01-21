@@ -78,3 +78,34 @@ def get_data():
     if not data_path:
         return jsonify({"error": "Brak DATA_FILE w .env / config."}), 500
     return jsonify(_read_json_file(data_path))
+
+
+def _get_thresholds_path():
+    path = os.getenv("THRESHOLDS_FILE") or current_app.config.get("THRESHOLDS_FILE")
+    return (path or "").strip().strip('"').strip("'")
+
+
+@bp.route("/api/thresholds", methods=["GET"])
+def get_thresholds():
+    path = _get_thresholds_path()
+    if not path or not os.path.exists(path):
+        return jsonify({"temp": 0, "humidity": 0, "mq2": 0, "mq7": 0}), 200
+
+    data = _read_json_file(path)
+    return jsonify(data)
+
+
+@bp.route("/api/thresholds", methods=["POST"])
+def update_thresholds():
+    path = _get_thresholds_path()
+    if not path:
+        return jsonify({"error": "Brak ścieżki do pliku progów"}), 500
+
+    new_data = request.get_json()
+    # Walidacja (opcjonalnie) - upewniamy się, że mamy liczby
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(new_data, f, indent=4)
+        return jsonify({"message": "Zapisano pomyślnie", "data": new_data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

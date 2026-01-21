@@ -1,7 +1,14 @@
 let humidityChart = null;
+let minHum = Infinity;
+let maxHum = -Infinity;
 
 export function createHumidityChart(canvasEl, humidity) {
   const ctx = canvasEl.getContext("2d");
+
+  // Inicjalizacja min/max przy starcie
+  if (humidity !== undefined && humidity !== null) {
+    updateMinMax(humidity);
+  }
 
   humidityChart = new Chart(ctx, {
     type: "doughnut",
@@ -29,8 +36,32 @@ export function createHumidityChart(canvasEl, humidity) {
   return humidityChart;
 }
 
+function updateMinMax(humidity) {
+  const val = parseFloat(humidity);
+  if (isNaN(val)) return;
+
+  if (val < minHum) {
+    minHum = val;
+    const minEl = document.getElementById("hum-min");
+    if (minEl) minEl.innerText = `${minHum.toFixed(1)}%`;
+  }
+
+  if (val > maxHum) {
+    maxHum = val;
+    const maxEl = document.getElementById("hum-max");
+    if (maxEl) maxEl.innerText = `${maxHum.toFixed(1)}%`;
+  }
+}
+
 export function updateHumidityChart(humidity) {
   if (!humidityChart) return;
-  humidityChart.data.datasets[0].data = [humidity, 100 - humidity];
+
+  const val = parseFloat(humidity);
+  updateMinMax(val);
+
+  const humDisplay = document.getElementById("hum");
+  if (humDisplay) humDisplay.innerText = `${val.toFixed(1)} %`;
+
+  humidityChart.data.datasets[0].data = [val, 100 - val];
   humidityChart.update();
 }

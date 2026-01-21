@@ -91,5 +91,5 @@ export function initAIChat() {
     }
   });
 
-  addMessage("bot", "Czat gotowy. Backend podłączony.");
+  addMessage("bot", "Cześć. Jak mogę pomóc?");
 }

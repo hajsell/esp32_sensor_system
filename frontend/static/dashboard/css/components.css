@@ -141,12 +141,13 @@
 
 .threshold-input {
   width: calc(100% - 20px);
-  padding: 10px 10px;
+  padding: 8px 8px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(0,0,0,0.18);
-  color: #e8eefc;
+  color: #989dab;
   outline: none;
+  font-size: 16px;
 }
 
 .threshold-input:focus {
@@ -178,4 +179,10 @@
 .thresholds-status {
   font-size: 12px;
   opacity: 0.8;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
