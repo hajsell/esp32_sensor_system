@@ -5,7 +5,7 @@ from typing import Any
 DEFAULT_WARNING = {
     "temperature": 30.0,
     "humidity": 75.0,
-    "mq2": 1450.0,
+    "mq2": 1750.0,
     "mq7": 4200.0,
 }
 
@@ -54,3 +54,17 @@ def save_warning_thresholds(path: str, warning: dict[str, Any]) -> dict[str, Any
 
 def thresholds_snapshot(path: str) -> dict[str, Any]:
     return load_warning_thresholds(path)
+
+
+def check_violations(current_data: dict[str, Any], thresholds: dict[str, Any]) -> list[str]:
+    violations = []
+    warn_levels = thresholds.get("warning", {})
+    alarm_levels = thresholds.get("alarm", {})
+
+    for key, value in current_data.items():
+        if key in alarm_levels and value >= alarm_levels[key]:
+            violations.append(f"ALARM: {key} wynosi {value} (próg: {alarm_levels[key]})")
+        elif key in warn_levels and value >= warn_levels[key]:
+            violations.append(f"Ostrzeżenie: {key} wynosi {value} (próg: {warn_levels[key]})")
+
+    return violations

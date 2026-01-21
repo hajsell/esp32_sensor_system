@@ -83,3 +83,20 @@ class OpenAIAgent:
             include=include,
         )
         return resp.output_text
+
+    def generate_alert_comment(
+            self,
+            violations: list[str],
+            current_db: Any,
+            thresholds: Any
+    ) -> str:
+        system_prompt = (
+            "Wykryto przekroczenie norm w systemie IoT! "
+            "Zinterpretuj te naruszenia, oceń ryzyko i podaj krótką poradę. "
+            "Bądź zwięzły i konkretny. Mów jak ekspert bezpieczeństwa."
+        )
+
+        user_msg = f"Wykryte naruszenia: {', '.join(violations)}. Przeanalizuj to."
+
+        # Wykorzystujemy istniejącą logikę runtime_block
+        return self.ask(message=user_msg, current_db=current_db, thresholds=thresholds)

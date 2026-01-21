@@ -30,10 +30,10 @@ class MqttGuiGenerator(tk.Tk):
 
         self.var_host = tk.StringVar(value="7d195151bce44ede9285bd5b8dcc8abe.s1.eu.hivemq.cloud")
         self.var_port = tk.IntVar(value=8883)
-        self.var_topic = tk.StringVar(value="home/sensors/all")
+        self.var_topic = tk.StringVar(value="production/sensor/all")
         self.var_user = tk.StringVar(value="generator")
         self.var_pass = tk.StringVar(value="Generator1")
-        self.var_tls = tk.BooleanVar(value=False)
+        self.var_tls = tk.BooleanVar(value=True)
         self.var_ca = tk.StringVar(value="")
 
         row = 0

@@ -21,9 +21,16 @@ export function initAIChat() {
     });
   }
 
-  function addMessage(role, text) {
+  /**
+   * Główna funkcja dodająca dymek do czatu
+   * @param {string} role - 'user', 'bot' lub 'system-alert'
+   * @param {string} text - treść wiadomości
+   * @param {string} level - opcjonalnie: 'warning' lub 'danger' dla alertów
+   */
+  function addMessage(role, text, level = "") {
     const row = document.createElement("div");
-    row.className = `ai-chat-row ${role}`;
+    // Dodajemy klasę level (danger/warning), jeśli to alert systemowy
+    row.className = `ai-chat-row ${role} ${level}`;
 
     const bubble = document.createElement("div");
     bubble.className = "ai-chat-bubble";
@@ -31,7 +38,12 @@ export function initAIChat() {
 
     const meta = document.createElement("div");
     meta.className = "ai-chat-meta";
-    meta.textContent = `${role === "user" ? "Ty" : "AI"} • ${time()}`;
+
+    let label = "AI";
+    if (role === "user") label = "Ty";
+    if (role === "system-alert") label = "🤖 ALERT SYSTEMOWY";
+
+    meta.textContent = `${label} • ${time()}`;
 
     const wrap = document.createElement("div");
     wrap.appendChild(bubble);
@@ -39,8 +51,22 @@ export function initAIChat() {
 
     row.appendChild(wrap);
     messagesEl.appendChild(row);
+
+    // Auto-scroll do dołu przy nowej wiadomości
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
+
+  /**
+   * Funkcja dostępna globalnie, wywoływana z main.js przez SocketIO
+   */
+  window.addAIAlertToChat = function(data) {
+    // data.content pochodzi z Twojego backendu (ai_response)
+    // data.level to 'danger' lub 'warning'
+    addMessage("system-alert", data.content, data.level);
+
+    // Dodajemy do historii, żeby AI pamiętało o alercie w kolejnych pytaniach
+    history.push({ role: "assistant", content: `[SYSTEM ALERT]: ${data.content}` });
+  };
 
   async function callBackend(message) {
     const res = await fetch("/api/chat", {
@@ -91,5 +117,6 @@ export function initAIChat() {
     }
   });
 
-  addMessage("bot", "Cześć. Jak mogę pomóc?");
+  // Powitanie
+  addMessage("bot", "Cześć. Monitoruję Twoje czujniki ESP32. Jak mogę pomóc?");
 }

@@ -18,20 +18,20 @@ class MQTTService:
         self.last_saved_time = None
         self._thresholds_path = self.cfg.get("THRESHOLDS_FILE") or "data/thresholds.json"
         self._data_path = self.cfg.get("DATA_FILE") or "data/data.json"
+        self.last_ai_alert_time = None
+        self.ai_cooldown_seconds = 120
+        self.active_violations = set()
 
     def start_in_background(self):
         threading.Thread(target=self._run, daemon=True).start()
 
     def _run(self):
-        # Generujemy unikalne Client ID, aby uniknąć konfliktów z innymi sesjami
         client_id = f"{self.cfg.get('MQTT_CLIENT_ID')}_{datetime.now().strftime('%H%M%S')}"
         client = mqtt.Client(client_id=client_id)
-
         client.username_pw_set(self.cfg.get("MQTT_USERNAME"), self.cfg.get("MQTT_PASSWORD"))
         client.tls_set()
         client.on_connect = self._on_connect
         client.on_message = self._on_message
-
         client.connect(self.cfg.get("MQTT_BROKER"), int(self.cfg.get("MQTT_PORT", 8883)), 60)
         client.loop_forever()
 
@@ -39,7 +39,6 @@ class MQTTService:
         client.subscribe(self.cfg.get("MQTT_TOPIC"))
 
     def _normalize_payload(self, data: dict) -> dict:
-        # Używamy czasu z teraz TYLKO dla świeżych wiadomości
         now_str = datetime.now().strftime(TS_FMT)
 
         def to_float(v):
@@ -56,17 +55,26 @@ class MQTTService:
             "mq7": to_float(data.get("mq7")),
         }
 
-    def _is_alarm(self, data: dict, thresholds: dict) -> bool:
+    def _get_violations(self, data: dict, thresholds: dict) -> list[str]:
+        """Zwraca listę komunikatów o przekroczeniach."""
+        violations = []
+        warn = thresholds.get("warning", {})
         alarm = thresholds.get("alarm", {})
-        mq2, mq7 = data.get("mq2"), data.get("mq7")
-        mq2_a, mq7_a = alarm.get("mq2"), alarm.get("mq7")
-        return any([
-            mq2_a is not None and mq2 is not None and mq2 >= mq2_a,
-            mq7_a is not None and mq7 is not None and mq7 >= mq7_a
-        ])
+
+        for key in ["temperature", "humidity", "mq2", "mq7"]:
+            val = data.get(key)
+            if val is None: continue
+
+            # Najpierw sprawdzamy Alarmy (wyższy priorytet)
+            if key in alarm and val >= alarm[key]:
+                violations.append(f"ALARM: {key} ({val} >= {alarm[key]})")
+            # Potem Ostrzeżenia
+            elif key in warn and val >= warn[key]:
+                violations.append(f"Ostrzeżenie: {key} ({val} >= {warn[key]})")
+
+        return violations
 
     def _on_message(self, client, userdata, msg):
-        # KLUCZOWA POPRAWKA: Ignorujemy wiadomości "zachowane" (stare śmieci z brokera)
         if msg.retain:
             return
 
@@ -79,20 +87,65 @@ class MQTTService:
             data = self._normalize_payload(payload_dict)
             thresholds = thresholds_snapshot(self._thresholds_path)
 
-            # Wysyłamy do dashboardu przez SocketIO
+            # 1. Wyślij surowe dane do dashboardu (wykresy)
             self.socketio.emit("new_data", data)
 
-            # Obsługa AI / Alarmu
-            if self.last_saved_data and self._is_alarm(data, thresholds):
-                if self.openai and hasattr(self.openai, "ask"):
-                    prompt = f"Wykryto ALARM IoT.\nDANE: {data}\nPROGI: {thresholds}"
-                    try:
-                        self.openai.ask(message=prompt, history=[],
-                                        db_snapshot={"last": data, "thresholds": thresholds})
-                    except:
-                        pass
+            # --- LOGIKA AI I ALARMÓW ---
+            current_violations = self._get_violations(data, thresholds)
 
-            # Zapis do pliku tylko jeśli funkcja logiczna na to pozwala
+            # Wyciągamy same klucze (np. 'temperature', 'mq2'), które są w stanie naruszenia
+            # Zakładamy, że _get_violations zwraca napisy typu "Ostrzeżenie: temperature (...)"
+            current_violated_keys = set()
+            for v in current_violations:
+                for key in ["temperature", "humidity", "mq2", "mq7"]:
+                    if key in v:
+                        current_violated_keys.add(key)
+
+            now = datetime.now()
+            can_ask_ai = (self.last_ai_alert_time is None or
+                          (now - self.last_ai_alert_time).total_seconds() > self.ai_cooldown_seconds)
+
+            ai_response = None
+            alert_level = None
+
+            # PRZYPADEK A: Wykryto NOWE naruszenia lub trwają obecne (ALARM)
+            if current_violations and can_ask_ai:
+                self.last_ai_alert_time = now
+                violations_str = ", ".join(current_violations)
+                prompt = f"System wykrył następujące naruszenia: {violations_str}. Przeanalizuj krótko ryzyko i daj konkretną poradę."
+                alert_level = "danger" if any("ALARM" in v for v in current_violations) else "warning"
+
+                try:
+                    ai_response = self.openai.ask(message=prompt, current_db=data, thresholds=thresholds)
+                except Exception as ai_err:
+                    print(f"[AI Error Alert] {ai_err}")
+
+            # PRZYPADEK B: Parametry WRÓCIŁY do normy
+            # Sprawdzamy, co było w active_violations, a czego nie ma w current_violated_keys
+            resolved = self.active_violations - current_violated_keys
+            if resolved and not current_violations and can_ask_ai:
+                self.last_ai_alert_time = now
+                resolved_str = ", ".join(resolved)
+                prompt = f"Następujące parametry wróciły do normy: {resolved_str}. Poinformuj o tym użytkownika i krótko podsumuj, że sytuacja jest już bezpieczna."
+                alert_level = "success"  # Zielony kolor na froncie
+
+                try:
+                    ai_response = self.openai.ask(message=prompt, current_db=data, thresholds=thresholds)
+                except Exception as ai_err:
+                    print(f"[AI Error Recovery] {ai_err}")
+
+            # Jeśli AI wygenerowało odpowiedź (dla alarmu lub powrotu), wyślij ją
+            if ai_response:
+                self.socketio.emit("ai_alert", {
+                    "content": ai_response,
+                    "timestamp": data["timestamp"],
+                    "level": alert_level
+                })
+
+            # Aktualizujemy stan aktywnych naruszeń na przyszłość
+            self.active_violations = current_violated_keys
+
+            # 4. Zapis do bazy danych
             if should_save(data, self.last_saved_data, self.last_saved_time, thresholds):
                 append_record(self._data_path, data)
                 self.socketio.emit("data_saved")

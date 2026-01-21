@@ -15,7 +15,6 @@ async function bootstrap() {
   initThresholds();
   initAIChat();
 
-
   connectSocket({
     onNewData: (data) => {
       setCurrentValues(data);
@@ -25,6 +24,10 @@ async function bootstrap() {
       history = await getHistory();
       applyMinMaxFromHistory(history);
       refreshHistoryCharts(history);
+    },
+    // DODAJ TO:
+    onAIAlert: (alertData) => {
+      window.addAIAlertToChat?.(alertData);
     }
   });
 }
