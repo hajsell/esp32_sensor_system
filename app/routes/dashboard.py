@@ -1,13 +1,14 @@
 import os
 import json
 from flask import Blueprint, render_template, jsonify, current_app, request
-from dotenv import load_dotenv
 
 from app.services.openai_agent import OpenAIAgent
+from app.services.database import get_database
+from app.extensions import limiter
 
+from pydantic import ValidationError
 
-# Wczytaj .env (raz przy imporcie modułu)
-load_dotenv()
+from app.schemas import ChatRequest, ThresholdsRequest
 
 bp = Blueprint(
     "dashboard",
@@ -17,12 +18,23 @@ bp = Blueprint(
     static_url_path="/frontend-static",
 )
 
-agent = OpenAIAgent()
+agent = None
+
+
+def _database():
+    return get_database(
+        current_app.config.get("DATABASE_URL"),
+        current_app.config.get("APP_TIMEZONE", "Europe/Warsaw"),
+    )
+
+
+def _history():
+    device_id = current_app.config.get("MQTT_DEVICE_ID", "esp32-1")
+    return _database().history_24h(device_id)
 
 
 def _read_json_file(path: str):
-    # DATA_FILE/THRESHOLDS_FILE w .env mogą mieć cudzysłowy; os.getenv już je zwróci bez problemu,
-    # ale na wszelki wypadek strip.
+    # THRESHOLDS_FILE w .env może być zapisany w cudzysłowie.
     path = (path or "").strip().strip('"').strip("'")
     if not path:
         return None
@@ -36,24 +48,37 @@ def index():
 
 
 @bp.route("/api/chat", methods=["POST"])
+@limiter.limit("5 per minute; 30 per hour")
 def chat():
-    payload = request.get_json(silent=True) or {}
-    message = (payload.get("message") or "").strip()
-    history = payload.get("history") or []
+    global agent
+    try:
+        chat_request = ChatRequest.model_validate(
+            request.get_json(silent=True)
+        )
+    except ValidationError as error:
+        return _validation_error_response(error)
 
-    if not message:
-        return jsonify({"reply": "Podaj wiadomość :)"}), 400
+    message = chat_request.message
+    history = [
+        item.model_dump()
+        for item in chat_request.history
+    ]
 
-    data_path = os.getenv("DATA_FILE") or current_app.config.get("DATA_FILE")
+    if agent is None:
+        api_key = current_app.config.get("OPENAI_API_KEY")
+        if not api_key:
+            return jsonify({"reply": "Brak OPENAI_API_KEY w głównym pliku .env."}), 503
+        agent = OpenAIAgent(
+            api_key=api_key,
+            model=current_app.config.get("OPENAI_MODEL"),
+        )
+
     thr_path = os.getenv("THRESHOLDS_FILE") or current_app.config.get("THRESHOLDS_FILE")
 
-    if not data_path:
-        return jsonify({"reply": "Brak DATA_FILE w .env / config."}), 500
     if not thr_path:
         return jsonify({"reply": "Brak THRESHOLDS_FILE w .env / config."}), 500
 
-    # 24h baza + progi
-    data_24h = _read_json_file(data_path)
+    data_24h = _history()
     thresholds = _read_json_file(thr_path)
 
     # Jeżeli data_24h to lista rekordów, zostawiamy jak jest.
@@ -73,11 +98,9 @@ def chat():
 
 
 @bp.route("/api/data")
+@limiter.limit("60 per minute")
 def get_data():
-    data_path = os.getenv("DATA_FILE") or current_app.config.get("DATA_FILE")
-    if not data_path:
-        return jsonify({"error": "Brak DATA_FILE w .env / config."}), 500
-    return jsonify(_read_json_file(data_path))
+    return jsonify(_history())
 
 
 def _get_thresholds_path():
@@ -101,11 +124,49 @@ def update_thresholds():
     if not path:
         return jsonify({"error": "Brak ścieżki do pliku progów"}), 500
 
-    new_data = request.get_json()
+    try:
+        thresholds_request = ThresholdsRequest.model_validate(
+            request.get_json(silent=True)
+        )
+    except ValidationError as error:
+        return _validation_error_response(error)
+
+    new_data = thresholds_request.model_dump()
     # Walidacja (opcjonalnie) - upewniamy się, że mamy liczby
     try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(new_data, f, indent=4)
-        return jsonify({"message": "Zapisano pomyślnie", "data": new_data}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        with open(path, "w", encoding="utf-8") as file:
+            json.dump(
+                new_data,
+                file,
+                indent=4,
+                ensure_ascii=False,
+            )
+    except OSError:
+        current_app.logger.exception(
+            "Nie udało się zapisać progów."
+        )
+        return jsonify({
+            "error": "Nie udało się zapisać progów."
+        }), 500
+
+    return jsonify({
+        "message": "Zapisano pomyślnie.",
+        "data": new_data,
+    }), 200
+
+    new_data = thresholds_request.model_dump()
+
+def _validation_error_response(error: ValidationError):
+    details = [
+        {
+            "path": ".".join(str(part) for part in item["loc"]),
+            "message": item["msg"],
+            "type": item["type"],
+        }
+        for item in error.errors(include_input=False)
+    ]
+
+    return jsonify({
+        "error": "Niepoprawne dane wejściowe.",
+        "details": details,
+    }), 422

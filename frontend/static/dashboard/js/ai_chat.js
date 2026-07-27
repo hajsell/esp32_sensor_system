@@ -84,15 +84,23 @@ export function initAIChat() {
 
   async function handleSend(text) {
     addMessage("user", text);
-    history.push({ role: "user", content: text });
 
     sendBtn.disabled = true;
     input.disabled = true;
 
     try {
       const reply = await callBackend(text);
+
+      history.push(
+        { role: "user", content: text },
+        { role: "assistant", content: reply }
+      );
+
+      if (history.length > 10) {
+        history.splice(0, history.length - 10);
+      }
+
       addMessage("bot", reply);
-      history.push({ role: "assistant", content: reply });
     } catch (err) {
       addMessage("bot", `Błąd: ${err.message}`);
     } finally {

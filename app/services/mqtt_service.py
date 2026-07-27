@@ -1,23 +1,21 @@
 import json
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 import paho.mqtt.client as mqtt
-from app.services.storage import should_save, append_record
 from app.services.thresholds import thresholds_snapshot
 
 TS_FMT = "%Y-%m-%d %H:%M:%S"
 
 
 class MQTTService:
-    def __init__(self, cfg, socketio, email_service, openai_agent=None):
+    def __init__(self, cfg, socketio, database, openai_agent=None):
         self.cfg = cfg
         self.socketio = socketio
-        self.email = email_service
+        self.database = database
         self.openai = openai_agent
-        self.last_saved_data = None
-        self.last_saved_time = None
         self._thresholds_path = self.cfg.get("THRESHOLDS_FILE") or "data/thresholds.json"
-        self._data_path = self.cfg.get("DATA_FILE") or "data/data.json"
+        self._device_id = self.cfg.get("MQTT_DEVICE_ID") or "esp32-1"
+        self.last_history_refresh = None
         self.last_ai_alert_time = None
         self.ai_cooldown_seconds = 120
         self.active_violations = set()
@@ -32,7 +30,7 @@ class MQTTService:
         client.tls_set()
         client.on_connect = self._on_connect
         client.on_message = self._on_message
-        client.connect(self.cfg.get("MQTT_BROKER"), int(self.cfg.get("MQTT_PORT", 8883)), 60)
+        client.connect(self.cfg.get("MQTT_HOST"), int(self.cfg.get("MQTT_PORT", 8883)), 60)
         client.loop_forever()
 
     def _on_connect(self, client, userdata, flags, rc):
@@ -90,6 +88,17 @@ class MQTTService:
             # 1. Wyślij surowe dane do dashboardu (wykresy)
             self.socketio.emit("new_data", data)
 
+            # Każda próbka trafia do bazy. Wykres historii odświeżamy rzadziej,
+            # ponieważ korzysta z agregatów pięciominutowych.
+            self.database.insert_reading(data, self._device_id)
+            now = datetime.now()
+            if (
+                self.last_history_refresh is None
+                or now - self.last_history_refresh >= timedelta(minutes=5)
+            ):
+                self.socketio.emit("data_saved")
+                self.last_history_refresh = now
+
             # --- LOGIKA AI I ALARMÓW ---
             current_violations = self._get_violations(data, thresholds)
 
@@ -101,7 +110,6 @@ class MQTTService:
                     if key in v:
                         current_violated_keys.add(key)
 
-            now = datetime.now()
             can_ask_ai = (self.last_ai_alert_time is None or
                           (now - self.last_ai_alert_time).total_seconds() > self.ai_cooldown_seconds)
 
@@ -109,7 +117,7 @@ class MQTTService:
             alert_level = None
 
             # PRZYPADEK A: Wykryto NOWE naruszenia lub trwają obecne (ALARM)
-            if current_violations and can_ask_ai:
+            if current_violations and can_ask_ai and self.openai:
                 self.last_ai_alert_time = now
                 violations_str = ", ".join(current_violations)
                 prompt = f"System wykrył następujące naruszenia: {violations_str}. Przeanalizuj krótko ryzyko i daj konkretną poradę."
@@ -123,7 +131,7 @@ class MQTTService:
             # PRZYPADEK B: Parametry WRÓCIŁY do normy
             # Sprawdzamy, co było w active_violations, a czego nie ma w current_violated_keys
             resolved = self.active_violations - current_violated_keys
-            if resolved and not current_violations and can_ask_ai:
+            if resolved and not current_violations and can_ask_ai and self.openai:
                 self.last_ai_alert_time = now
                 resolved_str = ", ".join(resolved)
                 prompt = f"Następujące parametry wróciły do normy: {resolved_str}. Poinformuj o tym użytkownika i krótko podsumuj, że sytuacja jest już bezpieczna."
@@ -144,13 +152,6 @@ class MQTTService:
 
             # Aktualizujemy stan aktywnych naruszeń na przyszłość
             self.active_violations = current_violated_keys
-
-            # 4. Zapis do bazy danych
-            if should_save(data, self.last_saved_data, self.last_saved_time, thresholds):
-                append_record(self._data_path, data)
-                self.socketio.emit("data_saved")
-                self.last_saved_data = data
-                self.last_saved_time = datetime.now()
 
         except Exception as e:
             print(f"[MQTT] error: {e}")

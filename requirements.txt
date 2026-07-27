@@ -2,11 +2,11 @@
 Flask>=3.0
 Flask-SocketIO>=5.3
 
-# --- Async / WebSocket transport ---
-eventlet>=0.36
-
 # --- MQTT ---
 paho-mqtt>=2.1
+
+# --- PostgreSQL / TimescaleDB ---
+psycopg[binary,pool]>=3.2
 
 # --- ENV (.env) ---
 python-dotenv>=1.0
@@ -14,5 +14,9 @@ python-dotenv>=1.0
 # --- OpenAI agent ---
 openai>=1.0
 
-# --- (Opcjonalnie) produkcyjne uruchamianie ---
+# --- produkcyjne uruchamianie ---
 gunicorn>=22.0
+
+# --- Validation / rate limiting ---
+pydantic>=2.12
+Flask-Limiter>=4.1

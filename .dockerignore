@@ -1,0 +1,14 @@
+.git
+.gitignore
+.idea
+.env
+.env.*
+!.env.example
+venv
+.venv
+__pycache__
+*.py[cod]
+*.log
+data
+notatki.docx
+~$*.docx

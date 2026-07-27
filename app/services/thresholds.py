@@ -2,7 +2,6 @@ import json
 import os
 from typing import Any
 
-# Zaktualizowane domyślne wartości zgodnie z Twoim życzeniem
 DEFAULT_WARNING = {
     "temperature": 35.0,
     "humidity": 75.0,
@@ -35,7 +34,6 @@ def load_warning_thresholds(path: str) -> dict[str, Any]:
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # Jeśli w pliku brakuje klucza 'warning', nadpisujemy go domyślnymi
         return data if "warning" in data else save_warning_thresholds(path, DEFAULT_WARNING)
     except (json.JSONDecodeError, IOError):
         return save_warning_thresholds(path, DEFAULT_WARNING)
