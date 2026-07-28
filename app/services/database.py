@@ -2,6 +2,7 @@ from datetime import datetime
 from threading import Lock
 from zoneinfo import ZoneInfo
 
+from psycopg import sql
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -63,6 +64,77 @@ class SensorDatabase:
                 (self.timezone, device_id),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def latest_reading(self, device_id: str) -> dict | None:
+        query = """
+            SELECT
+                recorded_at,
+                temperature,
+                humidity,
+                mq2,
+                mq7
+            FROM sensor_readings
+            WHERE device_id = %s
+            ORDER BY recorded_at DESC
+            LIMIT 1
+        """
+
+        with self.pool.connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, (device_id,))
+                row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        result = dict(row)
+        result["timestamp"] = result.pop("recorded_at").isoformat()
+        return result
+
+    def sensor_summary(
+        self,
+        device_id: str,
+        metric: str,
+        hours: int,
+    ) -> dict:
+        allowed_metrics = {"temperature", "humidity", "mq2", "mq7"}
+        if metric not in allowed_metrics:
+            raise ValueError("Nieobsługiwana metryka.")
+        if not 1 <= hours <= 168:
+            raise ValueError("Zakres czasu musi wynosić od 1 do 168 godzin.")
+
+        query = sql.SQL(
+            """
+            SELECT
+                min({metric}) AS minimum,
+                max({metric}) AS maximum,
+                avg({metric}) AS average,
+                count({metric}) AS sample_count,
+                min(recorded_at) AS period_start,
+                max(recorded_at) AS period_end
+            FROM sensor_readings
+            WHERE device_id = %s
+              AND recorded_at >= now() - (%s * INTERVAL '1 hour')
+            """
+        ).format(metric=sql.Identifier(metric))
+
+        with self.pool.connection() as connection:
+            row = connection.execute(query, (device_id, hours)).fetchone()
+
+        result = dict(row)
+        for key in ("minimum", "maximum", "average"):
+            if result[key] is not None:
+                result[key] = float(result[key])
+        for key in ("period_start", "period_end"):
+            if result[key] is not None:
+                result[key] = result[key].isoformat()
+
+        return {
+            "device_id": device_id,
+            "metric": metric,
+            "hours": hours,
+            **result,
+        }
 
 
 _instances = {}

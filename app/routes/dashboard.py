@@ -71,6 +71,9 @@ def chat():
         agent = OpenAIAgent(
             api_key=api_key,
             model=current_app.config.get("OPENAI_MODEL"),
+            vector_store_id=current_app.config.get("OPENAI_VECTOR_STORE_ID"),
+            database=_database(),
+            device_id=current_app.config.get("MQTT_DEVICE_ID", "esp32-1"),
         )
 
     thr_path = os.getenv("THRESHOLDS_FILE") or current_app.config.get("THRESHOLDS_FILE")
@@ -78,22 +81,19 @@ def chat():
     if not thr_path:
         return jsonify({"reply": "Brak THRESHOLDS_FILE w .env / config."}), 500
 
-    data_24h = _history()
     thresholds = _read_json_file(thr_path)
 
-    # Jeżeli data_24h to lista rekordów, zostawiamy jak jest.
-    # Jeżeli to dict, też OK — model dostanie to jako JSON.
-    current_db = {
-        "window": "24h",
-        "data": data_24h,
-    }
-
-    reply = agent.ask(
-        message=message,
-        history=history,
-        current_db=current_db,
-        thresholds=thresholds,
-    )
+    try:
+        reply = agent.ask(
+            message=message,
+            history=history,
+            thresholds=thresholds,
+        )
+    except Exception:
+        current_app.logger.exception("Błąd podczas obsługi zapytania OpenAI.")
+        return jsonify({
+            "reply": "Nie udało się teraz przeprowadzić analizy. Spróbuj ponownie."
+        }), 502
     return jsonify({"reply": reply})
 
 
@@ -154,7 +154,6 @@ def update_thresholds():
         "data": new_data,
     }), 200
 
-    new_data = thresholds_request.model_dump()
 
 def _validation_error_response(error: ValidationError):
     details = [

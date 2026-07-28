@@ -268,7 +268,7 @@ class MqttGuiGenerator(tk.Tk):
                 client.tls_insecure_set(False)
             client.on_connect = self._on_connect
             client.on_disconnect = self._on_disconnect
-            client.connect_async(MQTT_HOST, MQTT_PORT, keepalive=60)
+            client.connect_async(MQTT_HOST, int(MQTT_PORT), keepalive=60)
             client.loop_start()
             self.client = client
             self._log(f"Łączenie z {MQTT_HOST}:{MQTT_PORT}…")

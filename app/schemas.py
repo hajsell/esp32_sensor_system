@@ -7,6 +7,13 @@ from pydantic import (
     field_validator,
 )
 
+SensorMetric = Literal[
+    "temperature",
+    "humidity",
+    "mq2",
+    "mq7",
+]
+
 
 class HistoryMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -57,3 +64,14 @@ class ThresholdsRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     warning: WarningThresholds
+
+
+class SensorSummaryArguments(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    metric: SensorMetric
+    hours: int = Field(ge=1, le=168)
+
+
+class CurrentReadingArguments(BaseModel):
+    model_config = ConfigDict(extra="forbid")

@@ -21,7 +21,12 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://sensor_app:${POSTGRES_PASSWORD:-sensor_dev_password}@db:5432/sensor_system
+      DATABASE_URL: ""
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      POSTGRES_DB: sensor_system
+      POSTGRES_USER: sensor_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sensor_dev_password}
       THRESHOLDS_FILE: /app/data/thresholds.json
       FLASK_DEBUG: "false"
     ports:
