@@ -1,45 +1,45 @@
 .header {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background-color: #1c202c;
-    color: #fff;
-    padding: 1rem 0;
-    text-align: center;
-    z-index: 1000;
-}
-
-.header .container {
-    max-width: 960px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10;
+  padding: 20px;
+  background: var(--surface-dark);
 }
 
 .content {
-    max-width: 1400px;
-    padding: 20px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  display: grid;
+  gap: var(--space);
+  width: min(1400px, 100%);
+  margin: auto;
+  padding: var(--space);
 }
 
-.temperature {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
+.content > section {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--space);
 }
 
-.other {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
+.chat > * {
+  grid-column: span 2;
 }
 
-.chat {
-    display: flex;
-    justify-content: space_between;
-    gap: 20px;
+.chat > :first-child {
+  grid-column: span 10;
+}
+
+.temperature > :first-child,
+.other > :last-child {
+  grid-column: span 3;
+}
+
+.temperature > :last-child,
+.other > :first-child {
+  grid-column: span 9;
+}
+
+@media (max-width: 850px) {
+  .content > section > * {
+    grid-column: 1 / -1 !important;
+  }
 }

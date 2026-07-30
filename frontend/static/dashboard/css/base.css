@@ -1,42 +1,42 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
-    font-family: Arial, Helvetica, sans-serif;
-    color: #676a73;
-    background: #232937;
-    text-align: center;
-    margin: 0;
-    padding-top: 4rem;
+  margin: 0;
+  padding-top: 64px;
+  color: var(--text-muted);
+  background: var(--bg);
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
 }
 
-h1, h2 {
-    color: #898d99;
-    margin: 0;
+h1,
+h2,
+h3,
+p {
+  margin: 0;
 }
 
-h2 {
-    text-align: left;
-    font-size: 20px;
+h1 {
+  color: var(--text-muted);
+  font-size: 1.25rem;
 }
 
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+h2,
+h3 {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  text-align: left;
 }
 
-*::-webkit-scrollbar-track {
-  background: transparent;
+button,
+input,
+textarea {
+  font: inherit;
 }
 
-*::-webkit-scrollbar-thumb {
-  background-color: rgba(255,255,255,0.22);
-  border-radius: 999px;
-  border: 3px solid transparent;
-  background-clip: padding-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255,255,255,0.35);
-}
-
-*::-webkit-scrollbar-corner {
-  background: transparent;
+* {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scrollbar-width: thin;
 }

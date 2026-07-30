@@ -28,11 +28,15 @@ services:
       POSTGRES_USER: sensor_app
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sensor_dev_password}
       THRESHOLDS_FILE: /app/data/thresholds.json
-      FLASK_DEBUG: "false"
+      FLASK_DEBUG: "true"
+      FLASK_ENV: "development"
+      SOCKETIO_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5000,http://127.0.0.1:5000"
     ports:
       - "5000:5000"
     volumes:
+      - .:/app
       - ./data:/app/data
+      - /app/__pycache__
     depends_on:
       db:
         condition: service_healthy
@@ -47,8 +51,38 @@ services:
       interval: 10s
       timeout: 5s
       retries: 6
+    command:
+      [
+        "gunicorn",
+        "--reload",
+        "--worker-class",
+        "gthread",
+        "--workers",
+        "1",
+        "--threads",
+        "20",
+        "--bind",
+        "0.0.0.0:5000",
+        "run:app"
+      ]
     init: true
     restart: unless-stopped
 
+  browser-sync:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app:ro     # obserwuje pliki projektu
+    ports:
+      - "3000:3000"   # tutaj wchodzisz w przeglądarce
+      - "3001:3001"   # opcjonalnie UI BrowserSync
+    command:
+    - sh
+    - -c
+    - >
+      npm install -g browser-sync &&
+      browser-sync start --config /app/browser-sync.js
+    depends_on:
+      - app
 volumes:
   postgres_data:

@@ -25,6 +25,16 @@ def _database_url() -> str | None:
     return f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
 
+def _socketio_allowed_origins() -> list[str] | None:
+    configured_origins = os.getenv("SOCKETIO_ALLOWED_ORIGINS", "")
+    origins = [
+        origin.strip()
+        for origin in configured_origins.split(",")
+        if origin.strip()
+    ]
+    return origins or None
+
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
     DEBUG = os.getenv("FLASK_DEBUG", "false").lower() in {"1", "true", "yes"}
@@ -49,3 +59,4 @@ class Config:
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_HEADERS_ENABLED = True
     MAX_CONTENT_LENGTH = 32 * 1024
+    SOCKETIO_ALLOWED_ORIGINS = _socketio_allowed_origins()

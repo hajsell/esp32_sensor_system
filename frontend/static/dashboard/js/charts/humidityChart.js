@@ -5,7 +5,6 @@ let maxHum = -Infinity;
 export function createHumidityChart(canvasEl, humidity) {
   const ctx = canvasEl.getContext("2d");
 
-  // Inicjalizacja min/max przy starcie
   if (humidity !== undefined && humidity !== null) {
     updateMinMax(humidity);
   }

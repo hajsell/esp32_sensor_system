@@ -11,7 +11,10 @@ def create_app():
     app.config.from_object(Config)
 
     limiter.init_app(app)
-    socketio.init_app(app)
+    socketio.init_app(
+        app,
+        cors_allowed_origins=app.config["SOCKETIO_ALLOWED_ORIGINS"],
+    )
     app.register_blueprint(dashboard_bp)
 
     return app

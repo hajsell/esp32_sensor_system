@@ -5,9 +5,6 @@ export function initThresholds() {
   const status = document.getElementById("thresholds-status");
   const clearBtn = document.getElementById("thresholds-clear");
 
-  /**
-   * 1. POBIERANIE AKTUALNYCH WARTOŚCI Z SERWERA (JSON)
-   */
   async function loadThresholds() {
     console.log("Próba pobrania danych z /api/thresholds...");
 
@@ -18,11 +15,9 @@ export function initThresholds() {
       const data = await response.json();
       console.log("Otrzymany JSON:", data);
 
-      // Wyciągamy obiekt z wnętrza "warning" (zgodnie z Twoją strukturą pliku)
       const nestedData = data.warning;
 
       if (nestedData) {
-        // Mapujemy klucze z JSON (lewa) na atrybuty name w HTML (prawa)
         const mapping = {
           temperature: "temp",
           humidity: "humidity",
@@ -51,16 +46,11 @@ export function initThresholds() {
     }
   }
 
-  // Wywołaj od razu przy starcie strony
   loadThresholds();
 
-  /**
-   * FUNKCJE POMOCNICZE
-   */
   function setStatus(msg) {
     if (status) {
       status.textContent = msg;
-      // Usuń komunikat po 3 sekundach
       setTimeout(() => { status.textContent = ""; }, 3000);
     }
   }
@@ -68,17 +58,12 @@ export function initThresholds() {
   function readNumber(name) {
     const el = form.elements[name];
     const val = parseFloat(el?.value);
-    // Jeśli pole jest puste lub błędne, zwracamy 0 lub inną wartość domyślną
     return isNaN(val) ? 0 : val;
   }
 
-  /**
-   * 2. ZAPISYWANIE DANYCH (POST)
-   */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Budujemy strukturę identyczną jak w pliku JSON (zagnieżdżone w warning)
     const payload = {
       warning: {
         temperature: readNumber("temp"),
@@ -107,11 +92,7 @@ export function initThresholds() {
     }
   });
 
-  /**
-   * 3. PRZYCISK PRZYWRACANIA (Wcześniej: Wyczyść)
-   */
   clearBtn?.addEventListener("click", () => {
-    // Zamiast form.reset(), wywołujemy ponownie ładowanie danych z serwera
     loadThresholds();
     setStatus("Przywrócono ostatnio zapisane wartości.");
   });

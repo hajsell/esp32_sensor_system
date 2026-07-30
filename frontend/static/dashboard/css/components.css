@@ -1,188 +1,117 @@
 .card {
-    background: #282f3f;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    min-height: 400px;
-    box-sizing: border-box;
+  min-width: 0;
+  min-height: 380px;
+  padding: var(--space);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
-.card--hist {
-    width: 100%;
-}
-.card .info {
-    padding: 8px 12px;
+.info,
+.card__title {
+  padding: 8px 12px;
 }
 
-.card .values {
-    padding: 20px;
-}
-
-.chart-content {
-    gap: 30px;
-}
-
-#humidityChart {
-    display: block;
-    position: relative;
-    z-index: 1;
-}
-
-.chart-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 0;
-    width: 50px;
-    height: 50px;
-    opacity: 0.5;
-}
-
-.gas-charts {
-    display: flex;
-    margin-top: 40px;
-    gap: 20px;
-}
-
-.mq2, .mq7 {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
+.values,
 .card-content {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
+  display: grid;
+  place-items: center;
+  gap: 20px;
+  height: calc(100% - 40px);
 }
 
-.max-min {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 100px;
-    gap: 20px;
-}
-
-.max-min-h {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 40px;
-    gap: 20px;
-}
-
-.max, .min {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #989dab;
+.sensor-icon {
+  color: #43b6f0;
+  font-size: 5rem;
+  line-height: 1;
 }
 
 .value {
-    font-size: 3em;
-    color: #989dab;
-}
-
-.temp-info {
-    display: flex;
-    flex-direction: column;
-    font-size: 0.75rem;
-    color: #676a73;
+  color: var(--text-muted);
+  font-size: 3rem;
 }
 
 .small-value {
-    font-size: 1.25rem;
-    color: #989dab;
+  color: var(--text-muted);
+  font-size: 1.2rem;
 }
 
-.thresholds-card {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.thresholds-card .card__title {
-  opacity: 0.75;
-  margin: 0;
-  padding: 8px 12px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #898d99;
-  text-align: justify;
-}
-
-.thresholds-form {
-  display: grid;
-  gap: 12px;
-}
-
-.thresholds-grid {
+.max-min {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: auto;
+  padding: 0 20px;
+}
+
+.max,
+.min {
+  display: flex;
   gap: 8px;
 }
 
-@media (max-width: 720px) {
-  .thresholds-grid { grid-template-columns: 1fr; }
+.extreme {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.threshold-field {
+.extreme__icon {
+  font-size: 1.8rem;
+}
+
+.extreme--max .extreme__icon {
+  color: var(--danger);
+}
+
+.extreme--min .extreme__icon {
+  color: var(--success);
+}
+
+.temp-info {
   display: grid;
-  gap: 6px;
-}
-
-.threshold-label {
-  font-size: 15px;
-  opacity: 0.8;
+  color: var(--text-dim);
+  font-size: 0.75rem;
   text-align: left;
 }
 
-.threshold-input {
-  width: calc(100% - 20px);
-  padding: 8px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.18);
-  color: #989dab;
-  outline: none;
-  font-size: 16px;
+.chart-content {
+  position: relative;
 }
 
-.threshold-input:focus {
-  border-color: rgba(255,255,255,0.22);
+.chart-icon {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
+  color: #43b6f0;
+  font-size: 3rem;
+  opacity: 0.55;
 }
 
-.thresholds-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+.gas-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space);
+  margin-top: 30px;
 }
 
-.thresholds-btn {
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.06);
-  color: #e8eefc;
-  cursor: pointer;
+.mq2,
+.mq7 {
+  display: grid;
+  gap: 8px;
 }
 
-.thresholds-btn.primary {
-  background: rgba(43,108,255,0.75);
-  border-color: rgba(43,108,255,0.35);
+.gas-charts canvas {
+  max-width: 100%;
 }
 
-.thresholds-status {
-  font-size: 12px;
-  opacity: 0.8;
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  appearance: none;
 }
 
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+@media (max-width: 600px) {
+  .gas-charts {
+    grid-template-columns: 1fr;
+  }
 }

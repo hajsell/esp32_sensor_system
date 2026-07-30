@@ -5,7 +5,7 @@ function setText(id, value) {
 
 export function setCurrentValues(data) {
   if (!data) return;
-  setText("temp", data.temperature != null ? `${data.temperature} °C` : "-- °C");
+  setText("temp", data.temperature != null ? `${data.temperature.toFixed(1)} °C` : "-- °C");
   setText("hum",  data.humidity != null ? `${data.humidity} %` : "-- %");
   setText("mq2Current", data.mq2 != null ? `${data.mq2}` : "--");
   setText("mq7Current", data.mq7 != null ? `${data.mq7}` : "--");

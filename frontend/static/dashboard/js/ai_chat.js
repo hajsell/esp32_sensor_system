@@ -1,4 +1,3 @@
-// frontend/static/dashboard/js/ai_chat.js
 
 export function initAIChat() {
   const root = document.getElementById("ai-chat");
@@ -29,7 +28,6 @@ export function initAIChat() {
    */
   function addMessage(role, text, level = "") {
     const row = document.createElement("div");
-    // Dodajemy klasę level (danger/warning), jeśli to alert systemowy
     row.className = `ai-chat-row ${role} ${level}`;
 
     const bubble = document.createElement("div");
@@ -52,19 +50,14 @@ export function initAIChat() {
     row.appendChild(wrap);
     messagesEl.appendChild(row);
 
-    // Auto-scroll do dołu przy nowej wiadomości
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  /**
-   * Funkcja dostępna globalnie, wywoływana z main.js przez SocketIO
-   */
+
   window.addAIAlertToChat = function(data) {
-    // data.content pochodzi z Twojego backendu (ai_response)
-    // data.level to 'danger' lub 'warning'
+
     addMessage("system-alert", data.content, data.level);
 
-    // Dodajemy do historii, żeby AI pamiętało o alercie w kolejnych pytaniach
     history.push({ role: "assistant", content: `[SYSTEM ALERT]: ${data.content}` });
   };
 
@@ -125,6 +118,5 @@ export function initAIChat() {
     }
   });
 
-  // Powitanie
   addMessage("bot", "Cześć. Monitoruję Twoje czujniki ESP32. Jak mogę pomóc?");
 }

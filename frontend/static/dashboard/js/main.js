@@ -25,7 +25,6 @@ async function bootstrap() {
       applyMinMaxFromHistory(history);
       refreshHistoryCharts(history);
     },
-    // DODAJ TO:
     onAIAlert: (alertData) => {
       window.addAIAlertToChat?.(alertData);
     }
